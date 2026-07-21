@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import axios from 'axios'
 import countriesService from './services/countries'
 
 const Filter = ({searchQuery,onSearchChange}) => {
@@ -21,6 +22,19 @@ const Countries = ({countriesToShow, showCountry}) => {
 }
 
 const Country = ({ country }) => {
+  const [weather, setWeather] = useState(null)
+  const apiKey = import.meta.env.VITE_WEATHER_API_KEY
+  const [lat, lon] = country.capitalInfo?.latlng || []
+  const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`
+
+  useEffect(() => {
+    if (lat&&lon) {
+      axios
+        .get(url)
+        .then(response => {setWeather(response.data)})
+        .catch(error => {console.error('Error fetching weather data:',error)})
+    }},[url, lat, lon])
+
   return (
     <div>
       <h2>{country.name.common}</h2>
@@ -39,6 +53,19 @@ const Country = ({ country }) => {
         src={country.flags.png}
         alt={country.flags.alt}
       />
+
+      <h3>Weather in {country.capital?.[0]}</h3>
+      {!weather ? (<div>Loading weather...</div>) 
+      : (
+        <div>
+          <p>Temperature {weather.main.temp} °C</p>
+          <img
+            src={`https://openweathermap.org/img/wn/${weather.weather[0].icon}@2x.png`}
+            alt={weather.weather[0].description}/>
+          <p>Wind {weather.wind.speed} m/s</p>
+        </div>
+      )}
+
     </div>
   )
 }
